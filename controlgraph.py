@@ -493,7 +493,8 @@ class ControlGraph(object):
 		change = True
 		while change:
 			removed = set()
-			for block_id, block in self.get_blocks().items():
+
+			for block_id, block in list(self.get_blocks().items()):
 				if block_id in removed:
 					continue
 				suc_id = self.__can_merge(block_id)

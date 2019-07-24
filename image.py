@@ -32,7 +32,7 @@ class Image(object):
 	def interpret_bytecode(self, bytecode):
 		opcode = bytecode.opcode
 		if opcode not in actions:
-			raise IllegalInstructionError("GARBAGE bytcode encountered")
+			raise IllegalInstructionError("GARBAGE bytcode encountered "+ str(opcode))
 
 		delta = actions[opcode][0]
 		alpha = actions[opcode][1]

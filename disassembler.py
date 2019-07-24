@@ -63,7 +63,7 @@ class Disassembler(object):
 			if raw_byte in opcodes:
 				opcode = opcodes[raw_byte]
 			else:
-				opcode = "GARBAGE"
+				opcode = raw_byte #"GARBAGE"
 
 			bytecode = self.decode_bytecode(opcode, address, raw_byte)
 			self.bytecodes[address] = bytecode

@@ -22,9 +22,11 @@ opcodes = {
 	0x18: "XOR",
 	0x19: "NOT",
 	0x1a: "BYTE",
+	0x1b: "SHL",
+	0x1c: "SHR",
+	0x1d: "SAR",
 
 	0x20: "SHA3",
-	0x21: "NONZERO",
 
 	0x30: "ADDRESS",
 	0x31: "BALANCE",
@@ -39,6 +41,8 @@ opcodes = {
 	0x3a: "GASPRICE",
 	0x3b: "EXTCODESIZE",
 	0x3c: "EXTCODECOPY",
+	0x3d: "RETURNDATASIZE",
+	0x3e: "RETURNDATACOPY",
 
 	0x40: "BLOCKHASH",
 	0x41: "COINBASE",
@@ -138,9 +142,10 @@ opcodes = {
 	0xf2: "CALLCODE",
 	0xf3: "RETURN",
 	0xf4: "DELEGATECALL",
+	0xfa: "STATICCALL",
 	0xfd: "REVERT",
 	0xfe: "INVALID",
-	0xff: "SUICIDE"
+	0xff: "SELFDESTRUCT"
 }
 
 actions = {
@@ -172,6 +177,9 @@ actions = {
 	"XOR": (2, 1),
 	"NOT": (1, 1),
 	"BYTE": (2, 1),
+	"SHL": (2, 1),
+	"SHR": (2, 1),
+	"SAR": (2, 1),
 	"SHA3": (2, 1),
 	"ADDRESS": (0, 1),
 	"BALANCE": (1, 1),
@@ -186,6 +194,8 @@ actions = {
 	"GASPRICE": (0, 1),
 	"EXTCODESIZE": (1, 1),
 	"EXTCODECOPY": (4, 0),
+	"RETURNDATASIZE": (0, 1),
+	"RETURNDATACOPY": (3, 0),
 	"BLOCKHASH": (1, 1),
 	"COINBASE": (0, 1),
 	"TIMESTAMP": (0, 1),
@@ -282,10 +292,11 @@ actions = {
 	"CALLCODE": (7, 1),
 	"RETURN": (2, 0),
 	"DELEGATECALL": (6, 1),
+	"STATICCALL": (6, 1),
 
 	"REVERT": (2, 0),
 	"INVALID": (0, 0),
-	"SUICIDE": (1, 0)
+	"SELFDESTRUCT": (1, 0)
 }
 
 push_ops = {
@@ -373,7 +384,7 @@ exit_ops = {
 	"RETURN",
 	"INVALID",
 	"STOP",
-	"SUICIDE",
+	"SELFDESTRUCT",
 	"REVERT"
 }
 
@@ -439,7 +450,7 @@ mem_read_ops = {
 	"SHA3",
 	"CREATE",
 	"RETURN"
-} | log_ops | call_ops
+} | log_ops | call_ops 	# todo what is with revert?
 
 order_ops = {
 	"GAS",
@@ -458,6 +469,7 @@ fake_ops = {
 	"GEQ"   : ">=",      # fake
 	"NEQ"   : "!=",      # fake
 
+	# todo this ops are possible since solidity 5
 	"SL"    : "<<",      # fake
 	"SR"    : ">>",      # fake
 }
@@ -479,10 +491,10 @@ free_ops = set(opcodes.values()) \
 effect_ops = call_ops | log_ops | {"CREATE", "RETURN"}
 
 # if there is no more access its
-throw_away_ops = set(bin_ops.keys()
-    + mono_ops.keys()
+throw_away_ops = set(list(bin_ops.keys())
+    + list(mono_ops.keys())
 	+ ["MOVE", "NOP", "PASS"]
-	+ special_ops.keys())
+	+ list(special_ops.keys()))
 
 
 INTERNAL_RETURN_OPCODE = "INTRET"
