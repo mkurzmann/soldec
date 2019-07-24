@@ -1,10 +1,10 @@
-from ceptions import InternalFunctionError
 from bytecodes import *
 from opcodes import INTERNAL_RETURN_OPCODE, exit_ops
 
 import array, hashlib
-import operator
 from copy import deepcopy
+
+from signatures import get_function_signature
 
 
 class BytecodeBlock(object):
@@ -61,9 +61,21 @@ class BytecodeBlock(object):
 			and isinstance(push_bytecode, PushByteCode):
 			return push_bytecode.get_value()
 
-	def is_abort_block(self):
+	def is_invalid_block(self):
 		exit_bytecode = self.__items[-1]
-		if exit_bytecode.opcode in {"REVERT", "INVALID"}:
+		if exit_bytecode.opcode is "INVALID":
+			return True
+		if len(self.__items) < 2:
+			return False
+		push_bytecode = self.__items[-2]
+
+		return exit_bytecode.opcode == "JUMP" \
+			and isinstance(push_bytecode, PushByteCode)\
+			and push_bytecode.get_value() in {2, 0}
+
+	def is_revert_block(self):
+		exit_bytecode = self.__items[-1]
+		if exit_bytecode.opcode is "REVERT":
 			return True
 		if len(self.__items) < 2:
 			return False
@@ -87,12 +99,14 @@ class BytecodeBlock(object):
 			and isinstance(bytecode_4, PushByteCode) \
 			and bytecode_5.opcode == "JUMPI":
 			return bytecode_2.get_value()
+			#return get_function_signature(hex(bytecode_2.get_value()))
 		if bytecode_1.opcode in {"PUSH4", "PUSH3"} \
 			and bytecode_2.opcode == "DUP2" \
 			and bytecode_3.opcode == "EQ" \
 			and isinstance(bytecode_4, PushByteCode) \
 			and bytecode_5.opcode == "JUMPI":
 			return bytecode_1.get_value()
+			#return get_function_signature(hex(bytecode_1.get_value()))
 
 		if len(self.__items) < 6: return -1
 		bytecode_0 = bytecodes[-6]
@@ -100,19 +114,27 @@ class BytecodeBlock(object):
 		if bytecode_0.opcode == "DUP1" \
 			and bytecode_1.opcode in {"PUSH4", "PUSH3"} \
 			and bytecode_2.opcode == "EQ" \
-			and bytecode_3.opcode == "ASSERT":
+			and bytecode_3.opcode == "REQUIRE":
 			return bytecode_1.get_value()
+			#return get_function_signature(hex(bytecode_1.get_value()))
 		if bytecode_0.opcode in {"PUSH4", "PUSH3"} \
 			and bytecode_1.opcode == "DUP2" \
 			and bytecode_2.opcode == "EQ" \
-			and bytecode_3.opcode == "ASSERT":
+			and bytecode_3.opcode == "REQUIRE":
 			return bytecode_0.get_value()
+			#return get_function_signature(hex(bytecode_0.get_value()))
 
 		return -1
 
 	def insert_assert(self):
 		jumpi_bytecode = self.__items[-1]
 		assert_bytecode = ByteCode("ASSERT", "", jumpi_bytecode.get_address(), -1)
+		self.insert(assert_bytecode, -2)
+		jumpi_bytecode.opcode = "JUMP"
+
+	def insert_require(self):
+		jumpi_bytecode = self.__items[-1]
+		assert_bytecode = ByteCode("REQUIRE", "", jumpi_bytecode.get_address(), -1)
 		self.insert(assert_bytecode, -2)
 		jumpi_bytecode.opcode = "JUMP"
 

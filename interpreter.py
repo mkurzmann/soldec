@@ -68,7 +68,7 @@ class BasicInterpreter(Interpreter):
 		if opcode in jump_ops:
 			self.__create_jump_execution_path(cur_block, tracker, path)
 
-		if opcode not in exit_ops and opcode not in {"JUMP", "ASSERT"}:
+		if opcode not in exit_ops and opcode not in {"JUMP", "ASSERT", "REQUIRE"}:
 			self.__create_natural_execution_path(cur_block, cpy_tracker, path)
 
 	def __create_jump_execution_path(self, cur_block, tracker, path):

@@ -152,6 +152,7 @@ actions = {
 	# opcode : (delta, alpha),
 	"INTRET": (0, 0),  # this is fake
 	"ASSERT": (1, 0),  # this is fake
+	"REQUIRE": (1, 0),  # this is fake
 	# multiple INTCALL will be added, all fake
 
 	"STOP": (0, 0),

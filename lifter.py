@@ -50,7 +50,7 @@ class Lifter(GraphBuilder):
 
 	def __create_internal_functions(self):
 		self.internal_functions = dict()
-		for callee_pair, caller_pairs in self.__callee_pairs.items():
+		for callee_pair, caller_pairs in list(self.__callee_pairs.items()):
 			# print(caller_pairs)
 			func, caller_pairs = self.__create_internal_function(callee_pair, caller_pairs)
 			if len(caller_pairs) <= 1:

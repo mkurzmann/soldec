@@ -120,8 +120,11 @@ class Disassembler(object):
 			block_0 = self.__basic_blocks[id_0]
 			block_1 = self.__basic_blocks[id_1]
 			address = block_0.get_jumpi_address()
-			if address is not None and block_1.is_abort_block():
+			if address is not None and block_1.is_invalid_block():
 				block_0.insert_assert()
+
+			if address is not None and block_1.is_revert_block():
+				block_0.insert_require()
 
 	def debug_bytecodes(self):
 		for block_id in self.__basic_blocks:

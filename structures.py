@@ -332,7 +332,7 @@ class Loop(Structure):
 	def dot_format_block(self, depth):
 		prefix = get_prefix(depth)
 		results = [
-			prefix + "while (0x1) {\l",
+			prefix + "while (true) {\l",
 			self.blocks[0].dot_format_while_header(depth + 1),
 			self.blocks[1].dot_format_block(depth + 1),
 			prefix + "}\l",
