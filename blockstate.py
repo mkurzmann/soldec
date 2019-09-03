@@ -87,7 +87,7 @@ class MemState(BlockState):
 			self.mapping.clear()
 		else:
 			for write in instruction.writes:
-				for k, (v, i) in self.mapping.items():
+				for k, (v, i) in list(self.mapping.items()):
 					if v == write:
 						del self.mapping[k]
 
@@ -99,6 +99,25 @@ class MemState(BlockState):
 			else:
 				return list()
 		return values
+
+	def add_mapping_return(self, index, instruction):
+		opcode = instruction.opcode
+		if opcode in mem_write_ops:
+			if opcode == "MSTORE":
+				address, value = instruction.reads
+				self.mapping[address] = (value, index)
+				return
+			self.mapping.clear()
+		else:
+			for write in instruction.writes:
+				for k, (v, i) in list(self.mapping.items()):
+					if v == write:
+						del self.mapping[k]
+
+	def lookup_mapping_return(self, address):
+		if address in self.mapping:
+			return self.mapping[address]
+		return None
 
 
 class ExpressionState(BlockState):
@@ -119,7 +138,7 @@ class ExpressionState(BlockState):
 		if len(writes) == 0:
 			return
 		for write in expression.writes:
-			for r, e in self.mapping.items():
+			for r, e in list(self.mapping.items()):
 				if e.reads_register(write):
 					self.remove_mapping(r)
 			self.remove_mapping(write)
@@ -136,6 +155,6 @@ class ExpressionState(BlockState):
 			del (self.mapping[register])
 
 	def clear_entries(self, operations):
-		for r, e in self.mapping.items():
+		for r, e in list(self.mapping.items()):
 			if e.contains_operations(operations):
 				del (self.mapping[r])

@@ -46,6 +46,10 @@ def execute_binop(inputs):
 		return arg_0 >= arg_1
 	elif opcode == "NEQ":
 		return arg_0 != arg_1
+	elif opcode == "SHL":
+		return arg_0 << arg_1
+	elif opcode == "SHR":
+		return arg_0 >> arg_1
 	else:
 		raise NotImplementedError("binop %s not implemented" % opcode)
 

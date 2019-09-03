@@ -413,6 +413,8 @@ bin_ops = {
 	"MOD" 	: "%",
 	"BYTE"	: "BYTE",
 	"SIGNEXTEND" : "EXT",
+	"SHL"	: "<<",
+	"SHR"	: ">>"
 }
 
 mono_ops = {
@@ -465,6 +467,28 @@ negate_ops = {
 	"EQ" : "NEQ"
 }
 
+bool_ops = {
+	"GT",
+	"SGT",
+	"SLT",
+	"LT",
+	"EQ",
+	"LEQ",
+	"GEQ",
+	"NEQ",
+	"NOT",
+	"ISZERO"
+}
+
+uint_ops = {
+	"SUB",
+	"ADD",
+	"EXP",
+	"MUL",
+	"SDIV",
+	"SMOD"
+}
+
 fake_ops = {
 	"LEQ"   : "<=",      # fake
 	"GEQ"   : ">=",      # fake
@@ -504,3 +528,4 @@ INTERNAL_CALL_OPCODE = "INTCALL"
 
 ADDRESS_MASK = 0xffffffffffffffffffffffffffffffffffffffff
 WORD_MASK = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+BYTE_MASK = 0xff

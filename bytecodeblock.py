@@ -69,13 +69,17 @@ class BytecodeBlock(object):
 			return False
 		push_bytecode = self.__items[-2]
 
+		# todo check if this fallback is valid also for asserts or only for reverts
 		return exit_bytecode.opcode == "JUMP" \
 			and isinstance(push_bytecode, PushByteCode)\
 			and push_bytecode.get_value() in {2, 0}
 
 	def is_revert_block(self):
+		exit_bytecodes = self.__items[-3:]
 		exit_bytecode = self.__items[-1]
-		if exit_bytecode.opcode is "REVERT":
+
+		if exit_bytecode.opcode == "REVERT":
+		#if [b.opcode for b in exit_bytecodes] == ["PUSH1", "DUP1", "REVERT"]:
 			return True
 		if len(self.__items) < 2:
 			return False
@@ -206,7 +210,7 @@ class BytecodeBlock(object):
 			print(bytecode)
 
 	def __str__(self):
-		return "block_%d" % self.get_id()
+		return "block_%d" % self.get_id() + " " + str(hex(self.get_entry_address()))
 
 	def __iter__(self):
 		for item in self.__items:

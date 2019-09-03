@@ -1,4 +1,4 @@
-from expressions import PassExpression
+from expressions import PassExpression, BreakExpression
 
 
 def get_prefix(depth):
@@ -46,6 +46,9 @@ class ExpressionBlock:
 			and self.__expressions[-1].opcode == "JUMP":
 			self.__expressions = self.__expressions[:-1]
 
+	def add_break(self):
+		self.__expressions.append(BreakExpression(-1))
+
 	def debug_block(self, depth=0):
 		prefix = get_prefix(depth)
 		print(prefix + str(self.__block_id))
@@ -77,7 +80,7 @@ class ExpressionBlock:
 		results = []
 		for i, expression in enumerate(self.__expressions):
 			if i == len(self.__expressions) - 1:
-				results.append(prefix + expression.get_inverted_condition() + "{")
+				results.append(prefix + expression.get_inverted_condition() + " {") # todo breakexpressions don't like this
 			else:
 				results.append(prefix + str(expression))
 		return "\l".join(results) + "\l"
@@ -87,11 +90,14 @@ class ExpressionBlock:
 		results = []
 		for i, expression in enumerate(self.__expressions):
 			if i == len(self.__expressions) - 1:
-				results.append(prefix + expression.get_condition())
-				results.append(prefix + "\tbreak")
+				results.append(prefix + expression.get_condition() + " {") # todo get inverted condition?
+				#results.append(get_prefix(depth + 1) + "break;")
 			else:
-				results.append(prefix + str(expression))
+				results.append(get_prefix(depth + 1) + str(expression))
 		return "\l".join(results) + "\l"
+
+	def __str__(self):
+		return str(hex(self.__entry_address))
 
 
 

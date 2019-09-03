@@ -9,10 +9,11 @@ from resolver import BasicResolver
 import sys, os
 
 FALLBACK_SIGNATURE = 0xffffffff
+CONSTRUCTOR_SIGNATURE = 0x00000000
 
 
 class GraphBuilder(Disassembler):
-	def __init__(self, binary):
+	def __init__(self, binary, is_construct):
 		Disassembler.__init__(self, binary)
 		self.__init_resolver()
 		# initial build of graph
@@ -23,8 +24,11 @@ class GraphBuilder(Disassembler):
 		# build again because we need the indirect jumps
 		self.__build_graph(self.graph.get_blocks())
 
-		self.__create_external_functions()
-		self.__create_fallback_function()
+		if is_construct:
+			self.__create_constructor()
+		else:
+			self.__create_external_functions()
+			self.__create_fallback_function()
 
 	def __init_resolver(self):
 		self.resolver = BasicResolver(self.jump_dests)
@@ -123,6 +127,11 @@ class GraphBuilder(Disassembler):
 				self.graph.add_block(self.get_blocks()[1])
 			func = ExternalFunction(FALLBACK_SIGNATURE, self.graph, self.tracker, (1, None))
 			self.external_functions[FALLBACK_SIGNATURE] = func
+
+	def __create_constructor(self):
+		self.external_functions = dict()
+		func = ExternalFunction(CONSTRUCTOR_SIGNATURE, self.graph, self.tracker, (0, None))
+		self.external_functions[CONSTRUCTOR_SIGNATURE] = func
 
 	def validate_execution_path(self, program_counters):
 		path = self.get_block_trace(program_counters)

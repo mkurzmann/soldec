@@ -7,7 +7,7 @@ from blockstate import MemState
 
 from opcodes import *
 from baseexecutor import execute_binop, execute_monop
-from instructions import MoveInstruction, Instruction
+from instructions import MoveInstruction, Instruction, SHA3Operation
 
 import sys, math
 
@@ -18,7 +18,10 @@ def apply_peephole_optimizations(func):
 		__size_one_rewrites(block)
 		__size_two_rewrites(block)
 		rewrite_free_ptr(block)
-		# __sha3_rewrites(block)
+		__sha3_rewrites(block)
+		__return_rewrites(block)
+		__log_rewrites(block)
+
 
 
 def __order_operands(block):
@@ -217,9 +220,50 @@ def __sha3_rewrites(block):
 					values, indices = zip(*items)
 					for i in indices:
 						block.set_nop_instruction(i)
-					operation = Instruction("SHA3R", list(values), instruction.writes, instruction.address)
+					operation = SHA3Operation(list(values), instruction.writes, instruction.address)
 					block.set_instruction(index, operation)
 		local_memory.add_mapping(index, instruction)
+
+# todo check/test this two rewrite things
+def __return_rewrites(block):
+	local_memory = MemState()
+	instructions = block.get_instructions()
+	for index, instruction in enumerate(instructions):
+		if instruction.opcode == "RETURN":
+			begin, end = instruction.reads
+			if begin == "$m": # and not isinstance(end, str):
+				# addresses = range(begin, end, 32)
+				item = local_memory.lookup_mapping_return(begin)
+				if item:
+					value, i = item
+					#for i in indices:
+					block.set_nop_instruction(i)
+					list = [value, end]
+					operation = Instruction("RETURN", list, instruction.writes, instruction.address)
+					block.set_instruction(index, operation)
+		local_memory.add_mapping_return(index, instruction)
+
+
+def __log_rewrites(block):
+	local_memory = MemState()
+	instructions = block.get_instructions()
+	for index, instruction in enumerate(instructions):
+		if instruction.opcode in log_ops:
+			begin = instruction.reads[0]
+			if begin == "$m": # and not isinstance(end, str):
+				# addresses = range(begin, end, 32)
+				item = local_memory.lookup_mapping_return(begin)
+				if item:
+					value, i = item
+					#for i in indices:
+					block.set_nop_instruction(i)
+					list = [value]
+					if len(instruction.reads) > 2:
+						for r in instruction.reads[2:]:
+							list.append(r)
+					operation = Instruction(instruction.opcode, list, instruction.writes, instruction.address)
+					block.set_instruction(index, operation)
+		local_memory.add_mapping_return(index, instruction)
 
 
 def rewrite_free_ptr(block):
@@ -286,8 +330,8 @@ def can_reach(d, begin, end, instructions):
 
 
 class Optimizer(Lifter):
-	def __init__(self, binary):
-		Lifter.__init__(self, binary)
+	def __init__(self, binary, is_construct):
+		Lifter.__init__(self, binary, is_construct)
 		# return
 		self.__debug = False
 
