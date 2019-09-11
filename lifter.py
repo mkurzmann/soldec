@@ -14,7 +14,7 @@ import sys
 
 
 class Lifter(GraphBuilder):
-    def __init__(self, binary, is_construct):
+    def __init__(self, binary, is_construct=False):
         GraphBuilder.__init__(self, binary, is_construct)
         # for func in self.external_functions.values():
         #	func.visualize_function()
@@ -188,7 +188,6 @@ class Lifter(GraphBuilder):
         writes = to_stack_registers([stack_size - delta + i for i in range(alpha)])
         instructions = list()
 
-        # todo maybe here: lift variables more
         if opcode in swap_ops:
             read1 = [STACK_REGISTER + str(stack_size - delta)]
             read2 = [STACK_REGISTER + str(stack_size - 1)]

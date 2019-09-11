@@ -72,7 +72,7 @@ def aggregate_instruction(begin, block, live):
 
 
 class Aggregator(Optimizer):
-    def __init__(self, binary, is_construct):
+    def __init__(self, binary, is_construct=False):
         Optimizer.__init__(self, binary, is_construct)
         for func in self.get_all_functions():
             self.__convert_function(func)
@@ -174,7 +174,6 @@ class Aggregator(Optimizer):
     def __aggregate_single(block, live):
         expressions = block.get_items()
 
-        # todo hier wäre die richtige stelle an der man die variablen ändern könnte - nur wie?
         for i, expression in enumerate(expressions):
             writes = expression.get_write_registers()
             opcode = expression.opcode

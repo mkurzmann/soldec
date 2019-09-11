@@ -420,6 +420,8 @@ bin_ops = {
 mono_ops = {
 	"NOT"   : "!",
 	"ISZERO": "0 ==",		# ???
+	"NONZERO": "0 !=",		# fake - double ISZERO is transformed to NONZERO
+	"EMPTY": "",				# fake - double NONZERO is transformed to EMPTY
 }
 
 special_ops = {

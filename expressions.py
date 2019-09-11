@@ -71,7 +71,9 @@ class Expression(object):
     def get_dependency_or_read(self, index):
         if index in self.dependencies:
             return self.dependencies[index]
-        return self.reads[index]
+        if len(self.reads) > index:
+            return self.reads[index]
+        return None
 
     def invalidates(self, other):
         self_writes = self.get_write_registers()
@@ -130,7 +132,7 @@ class Expression(object):
             return "AD_MASK"
         if read == WORD_MASK:
             return "WD_MASK"
-        #if read == BYTE_MASK: # todo wenn zeit ist versuchen ob irgendwie die struct inhalte erkennbar sind
+        #if read == BYTE_MASK: #
         #    return "BY_MASK"
         return "0x%x" % read
 
@@ -152,7 +154,7 @@ class Expression(object):
         return "unknown"
 
     def __str__(self):
-        if self.writes:  # todo propagate a type from one variable to the next
+        if self.writes:
             return "%s %s = %s;" % (self.determine_type(), self.writes[0], self.format_dependencies(True))
         else:
             return self.format_dependencies(True)
@@ -179,17 +181,15 @@ class MoveExpression(Expression):
 class MonoOpExpression(Expression):
     def format_dependencies(self, suppress=False):
         operator = mono_ops[self.opcode]
+        dependency = self.format_dependency(0, False)
 
-        # todo is this useful/possible?
-        #if self.opcode is "ISZERO":
-        #    if self.format_dependency(0, False).startswith("("+operator):
-        #        return self.format_dependency(0, False)[operator.__len__()+2:-2]
-        #    elif self.format_dependency(0, False).startswith(operator):
-        #        return self.format_dependency(0, False)[operator.__len__()+1:-1]
+        if self.opcode is "ISZERO" and self.get_dependency(0) and self.get_dependency(0).opcode is "ISZERO":
+            dependency = self.format_dependency(0, False).replace("==", "!=", 1)
+            return "%s" % dependency
 
         if suppress:
-            return "%s %s" % (operator, self.format_dependency(0, False))
-        return "(%s %s)" % (operator, self.format_dependency(0, False))
+            return "%s %s" % (operator, dependency)
+        return "(%s %s)" % (operator, dependency)
 
 
 class BinOpExpression(Expression):
@@ -214,7 +214,8 @@ inverted = {
     "LEQ": ">",
     "GT": "<=",
     "GEQ": "<",
-    "NEQ": "=="
+    "NEQ": "==",
+    "EQ": "!=",
 }
 
 
@@ -226,8 +227,11 @@ class JumpIExpression(Expression):
         if 1 in self.dependencies:
             dependency = self.dependencies[1]
             opcode = dependency.opcode
+            # todo unbedingt noch prüfen vor abgabe! warum passen die expressions ohne invertieren bei den combined? wie ist das bei den schleifen?
             if opcode in {"NOT", "ISZERO"}:
                 return "if (%s)" % dependency.format_dependency(0)
+            if opcode is "NONZERO":
+                return "if (%s == 0)" % dependency.format_dependency(0)
             if opcode in inverted:
                 operator = inverted[opcode]
                 return "if (%s %s %s)" % (dependency.format_dependency(0), operator,
@@ -250,11 +254,11 @@ class AbstractStoreExpression(Expression):
         if isinstance(dep, int):
             return "_storage" + str(dep)
 
-        if isinstance(dep, SHA3Expression):
+        if isinstance(dep, SHA3Expression) and dep.get_dependency_or_read(1):
             first = dep.get_dependency_or_read(1)
             first_str = dep.format_dependency(1)
             out = "[" + dep.format_dependency(0) + "]"
-
+#
             # for recursive sha3 --> arrays or mappings with more than one dimension
             while isinstance(first, SHA3Expression):
                 out = "[" + first.format_dependency(0) + "]" + out
@@ -262,7 +266,10 @@ class AbstractStoreExpression(Expression):
                 first = f.get_dependency_or_read(0)
                 first_str = f.format_dependency(1)
             return "_storage" + first_str.replace("0x", "") + out
-            #return "_storage" + first.replace("0x", "") + "[" + dep.format_dependency(0) + "]"
+
+        if isinstance(dep, SHA3Expression):
+            return "_storage" + str(dep.format_dependency(0)).replace("0x", "")
+
 
         if isinstance(dep, BinOpExpression):
             first = dep.get_dependency_or_read(0)
@@ -272,13 +279,6 @@ class AbstractStoreExpression(Expression):
             if isinstance(first, int):
                 return "_storage" + str(first) + "[" + dep.format_dependency(1) + "]"
             if isinstance(first, SHA3Expression):
-                # todo is this needed?
-                #rec = first
-                #out = ""
-                #while isinstance(first, SHA3Expression):
-                #    out = "[" + dep.format_dependency(1) + "]"
-                #    dep = first.format_dependency(1)
-                #return "_storage" + first.format_dependency(0).replace("0x", "") + out
                 return "_storage" + first.format_dependency(0).replace("0x", "") + "[" + dep.format_dependency(1) + "]"
 
         return "S[%s]" % self.format_dependency(index)

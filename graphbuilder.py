@@ -13,7 +13,7 @@ CONSTRUCTOR_SIGNATURE = 0x00000000
 
 
 class GraphBuilder(Disassembler):
-	def __init__(self, binary, is_construct):
+	def __init__(self, binary, is_construct=False):
 		Disassembler.__init__(self, binary)
 		self.__init_resolver()
 		# initial build of graph

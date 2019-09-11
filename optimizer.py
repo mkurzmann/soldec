@@ -7,7 +7,7 @@ from blockstate import MemState
 
 from opcodes import *
 from baseexecutor import execute_binop, execute_monop
-from instructions import MoveInstruction, Instruction, SHA3Operation
+from instructions import MoveInstruction, Instruction, SHA3Operation, MonoOpInstruction
 
 import sys, math
 
@@ -148,6 +148,7 @@ def __size_two_rewrites(block):
 		__remove_double_mask(i, ins_0, ins_1, block)
 		__remove_address_mask(i, ins_0, ins_1, block)
 		__remove_doube_iszero(i, ins_0, ins_1, block)
+		__remove_doube_nonzero(i, ins_0, ins_1, block)
 	# want to remove double iszero first
 	for i in range(1, len(instructions)):
 		ins_0, ins_1 = instructions[i - 1:i + 1]
@@ -191,8 +192,19 @@ def __remove_doube_iszero(i, instruction_0, instruction_1, block):
 		instruction_1.address != instruction_0.address + 1:
 		return
 	block.set_nop_instruction(i - 1)
-	block.set_nop_instruction(i)
+	new_instruction = \
+		MonoOpInstruction("NONZERO", instruction_0.reads, instruction_0.writes, instruction_0.address)
+	block.set_instruction(i, new_instruction)
 
+def __remove_doube_nonzero(i, instruction_0, instruction_1, block):
+	if instruction_0.opcode != "NONZERO" or \
+		instruction_1.opcode != "NONZERO" or \
+		instruction_1.address != instruction_0.address + 2:
+		return
+	block.set_nop_instruction(i - 1)
+	new_instruction = \
+		MonoOpInstruction("EMPTY", instruction_0.reads, instruction_0.writes, instruction_0.address)
+	block.set_instruction(i, new_instruction)
 
 def __rewrite_negate_ops(i, instruction_0, instruction_1, block):
 	opcode = instruction_0.opcode
@@ -330,7 +342,7 @@ def can_reach(d, begin, end, instructions):
 
 
 class Optimizer(Lifter):
-	def __init__(self, binary, is_construct):
+	def __init__(self, binary, is_construct=False):
 		Lifter.__init__(self, binary, is_construct)
 		# return
 		self.__debug = False

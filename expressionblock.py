@@ -80,18 +80,20 @@ class ExpressionBlock:
 		results = []
 		for i, expression in enumerate(self.__expressions):
 			if i == len(self.__expressions) - 1:
-				results.append(prefix + expression.get_inverted_condition() + " {") # todo breakexpressions don't like this
+				results.append(prefix + expression.get_inverted_condition() + " {")
 			else:
 				results.append(prefix + str(expression))
 		return "\l".join(results) + "\l"
 
-	def dot_format_while_header(self, depth):
+	def dot_format_while_header(self, depth, invert=False):
 		prefix = get_prefix(depth)
 		results = []
 		for i, expression in enumerate(self.__expressions):
 			if i == len(self.__expressions) - 1:
-				results.append(prefix + expression.get_condition() + " {") # todo get inverted condition?
-				#results.append(get_prefix(depth + 1) + "break;")
+				if invert:
+					results.append(prefix + expression.get_inverted_condition() + " {")
+				else:
+					results.append(prefix + expression.get_condition() + " {")
 			else:
 				results.append(get_prefix(depth + 1) + str(expression))
 		return "\l".join(results) + "\l"
