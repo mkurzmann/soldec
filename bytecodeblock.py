@@ -73,12 +73,15 @@ class BytecodeBlock(object):
                and isinstance(push_bytecode, PushByteCode) \
                and push_bytecode.get_value() in {2, 0}
 
+    # this function identifies a block as a revert-block,
+    # when the last statement of the block is revert
+    # or if jumps to an invalid jump address
     def is_revert_block(self):
         exit_bytecodes = self.__items[-3:]
         exit_bytecode = self.__items[-1]
 
         if exit_bytecode.opcode == "REVERT":
-            # if [b.opcode for b in exit_bytecodes] == ["PUSH1", "DUP1", "REVERT"]:
+        #if [b.opcode for b in exit_bytecodes] == ["PUSH1", "DUP1", "REVERT"]:
             return True
         if len(self.__items) < 2:
             return False

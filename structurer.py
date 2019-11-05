@@ -145,7 +145,7 @@ class Structurer(Aggregator):
         # max_succ.is_loop_succ = True
         # max_succ.ingoing = loop.exits.__len__()
 
-        print([str(l) for l in loops])
+        #print([str(l) for l in loops])
         return loops
 
     def natural_loop_for_edge(self, graph, header, tail, loop=None):
@@ -281,7 +281,6 @@ class Structurer(Aggregator):
         graph.remove_blocks(sequence)
         return new_id
 
-    # todo comments on this
     def __match_combined_if(self, a0, graph):
         suc_ids = graph.get_dual_successors(a0)
         if suc_ids is None:

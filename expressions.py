@@ -227,7 +227,6 @@ class JumpIExpression(Expression):
         if 1 in self.dependencies:
             dependency = self.dependencies[1]
             opcode = dependency.opcode
-            # todo unbedingt noch prüfen vor abgabe! warum passen die expressions ohne invertieren bei den combined? wie ist das bei den schleifen?
             if opcode in {"NOT", "ISZERO"}:
                 return "if (%s)" % dependency.format_dependency(0)
             if opcode is "NONZERO":

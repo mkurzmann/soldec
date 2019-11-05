@@ -120,9 +120,12 @@ class Disassembler(object):
 			block_0 = self.__basic_blocks[id_0]
 			block_1 = self.__basic_blocks[id_1]
 			address = block_0.get_jumpi_address()
+
+			# if the last statement of the block is INVALID, then we insert aa assert-statement
 			if address is not None and block_1.is_invalid_block():
 				block_0.insert_assert()
 
+			# if the last statement of the block is REVERT, then we insert a require-statement
 			if address is not None and block_1.is_revert_block():
 				block_0.insert_require()
 

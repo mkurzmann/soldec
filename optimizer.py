@@ -236,7 +236,7 @@ def __sha3_rewrites(block):
 					block.set_instruction(index, operation)
 		local_memory.add_mapping(index, instruction)
 
-# todo check/test this two rewrite things
+# todo cleanup and comment
 def __return_rewrites(block):
 	local_memory = MemState()
 	instructions = block.get_instructions()
