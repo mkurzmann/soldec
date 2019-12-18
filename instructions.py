@@ -12,7 +12,7 @@ def to_stack_registers(items):
 
 
 class Instruction:
-    def __init__(self, opcode, reads, writes, address):
+    def __init__(self, opcode: object, reads: object, writes: object, address: object) -> object:
         self.opcode = opcode
         # must deep copy
         self.reads = deepcopy(reads)

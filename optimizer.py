@@ -149,6 +149,7 @@ def __size_two_rewrites(block):
 		__remove_address_mask(i, ins_0, ins_1, block)
 		__remove_doube_iszero(i, ins_0, ins_1, block)
 		__remove_doube_nonzero(i, ins_0, ins_1, block)
+		__remove_iszero_nonzero(i, ins_0, ins_1, block)
 	# want to remove double iszero first
 	for i in range(1, len(instructions)):
 		ins_0, ins_1 = instructions[i - 1:i + 1]
@@ -204,6 +205,16 @@ def __remove_doube_nonzero(i, instruction_0, instruction_1, block):
 	block.set_nop_instruction(i - 1)
 	new_instruction = \
 		MonoOpInstruction("EMPTY", instruction_0.reads, instruction_0.writes, instruction_0.address)
+	block.set_instruction(i, new_instruction)
+
+def __remove_iszero_nonzero(i, instruction_0, instruction_1, block):
+	if instruction_0.opcode != "NONZERO" or \
+		instruction_1.opcode != "ISZERO" or \
+		instruction_1.address != instruction_0.address + 2:
+		return
+	block.set_nop_instruction(i - 1)
+	new_instruction = \
+		MonoOpInstruction("ISZERO", instruction_0.reads, instruction_0.writes, instruction_0.address)
 	block.set_instruction(i, new_instruction)
 
 def __rewrite_negate_ops(i, instruction_0, instruction_1, block):
