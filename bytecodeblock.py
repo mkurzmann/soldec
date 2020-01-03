@@ -4,8 +4,6 @@ from opcodes import INTERNAL_RETURN_OPCODE, exit_ops
 import array, hashlib
 from copy import deepcopy
 
-from signatures import get_function_signature
-
 
 class BytecodeBlock(object):
     def __init__(self, block_id):
@@ -77,11 +75,11 @@ class BytecodeBlock(object):
     # when the last statement of the block is revert
     # or if jumps to an invalid jump address
     def is_revert_block(self):
-        exit_bytecodes = self.__items[-3:]
+        # exit_bytecodes = self.__items[-3:]
         exit_bytecode = self.__items[-1]
 
         if exit_bytecode.opcode == "REVERT":
-        #if [b.opcode for b in exit_bytecodes] == ["PUSH1", "DUP1", "REVERT"]:
+        # if [b.opcode for b in exit_bytecodes] == ["PUSH1", "DUP1", "REVERT"]:
             return True
         if len(self.__items) < 2:
             return False
@@ -105,14 +103,13 @@ class BytecodeBlock(object):
                 and isinstance(bytecode_4, PushByteCode) \
                 and bytecode_5.opcode == "JUMPI":
             return bytecode_2.get_value()
-        # return get_function_signature(hex(bytecode_2.get_value()))
+
         if bytecode_1.opcode in {"PUSH4", "PUSH3"} \
                 and bytecode_2.opcode == "DUP2" \
                 and bytecode_3.opcode == "EQ" \
                 and isinstance(bytecode_4, PushByteCode) \
                 and bytecode_5.opcode == "JUMPI":
             return bytecode_1.get_value()
-        # return get_function_signature(hex(bytecode_1.get_value()))
 
         if len(self.__items) < 6: return -1
         bytecode_0 = bytecodes[-6]
@@ -122,13 +119,12 @@ class BytecodeBlock(object):
                 and bytecode_2.opcode == "EQ" \
                 and bytecode_3.opcode == "REQUIRE":
             return bytecode_1.get_value()
-        # return get_function_signature(hex(bytecode_1.get_value()))
+
         if bytecode_0.opcode in {"PUSH4", "PUSH3"} \
                 and bytecode_1.opcode == "DUP2" \
                 and bytecode_2.opcode == "EQ" \
                 and bytecode_3.opcode == "REQUIRE":
             return bytecode_0.get_value()
-        # return get_function_signature(hex(bytecode_0.get_value()))
 
         return -1
 
