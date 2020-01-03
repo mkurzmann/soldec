@@ -3,7 +3,7 @@ from opcodes import *
 from copy import deepcopy
 
 from opcodes import ADDRESS_MASK
-from signatures import get_event_signature, get_event_signature_with_args
+from solidity.signatures import get_event_signature, get_event_signature_with_args
 
 TEMP_REGISTER = "$f"
 
@@ -196,7 +196,7 @@ class BinOpExpression(Expression):
     def format_dependencies(self, suppress):
         operator = bin_ops[self.opcode]
         s = "%s %s %s"
-        if self.format_dependency(0, False) in ["AD_MASK", "WD_MASK", "BY_MASK"]:  # todo  more
+        if self.format_dependency(0, False) in ["AD_MASK", "WD_MASK", "BY_MASK"]:  # todo add more masks
             return "%s" % self.format_dependency(1, False)
 
         if suppress:
@@ -250,9 +250,11 @@ class MstoreExpression(Expression):
 class AbstractStoreExpression(Expression):
     def transform_dependency(self, index):
         dep = self.get_dependency_or_read(index)
+        # when the dependent expression is of type int, the storage variable is primitive
         if isinstance(dep, int):
             return "_storage" + str(dep)
 
+        # when the dependent expression is of type sha3, the storage variable is a mapping
         if isinstance(dep, SHA3Expression) and dep.get_dependency_or_read(1):
             first = dep.get_dependency_or_read(1)
             first_str = dep.format_dependency(1)
@@ -266,10 +268,12 @@ class AbstractStoreExpression(Expression):
                 first_str = f.format_dependency(1)
             return "_storage" + first_str.replace("0x", "") + out
 
+        # fallback for sha3 expression, if no argument was found
         if isinstance(dep, SHA3Expression):
             return "_storage" + str(dep.format_dependency(0)).replace("0x", "")
 
-
+        # when the dependent expression is a binary expression, the storage variable is also a mapping
+        # but we need a different heuristic
         if isinstance(dep, BinOpExpression):
             first = dep.get_dependency_or_read(0)
             second = dep.get_dependency_or_read(1)
@@ -280,6 +284,7 @@ class AbstractStoreExpression(Expression):
             if isinstance(first, SHA3Expression):
                 return "_storage" + first.format_dependency(0).replace("0x", "") + "[" + dep.format_dependency(1) + "]"
 
+        # fallback, if no argument was found
         return "S[%s]" % self.format_dependency(index)
 
 

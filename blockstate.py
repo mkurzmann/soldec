@@ -100,7 +100,7 @@ class MemState(BlockState):
 				return list()
 		return values
 
-	def add_mapping_return(self, index, instruction):
+	def add_mapping_for_return_and_log(self, index, instruction):
 		opcode = instruction.opcode
 		if opcode in mem_write_ops:
 			if opcode == "MSTORE":
@@ -114,7 +114,7 @@ class MemState(BlockState):
 					if v == write:
 						del self.mapping[k]
 
-	def lookup_mapping_return(self, address):
+	def lookup_mapping_for_return_and_log(self, address):
 		if address in self.mapping:
 			return self.mapping[address]
 		return None

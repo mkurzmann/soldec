@@ -5,7 +5,7 @@ from expressionblock import ExpressionBlock
 
 import os
 
-from signatures import get_function_signature_with_args
+from solidity.signatures import get_function_signature_with_args
 
 
 def get_prefix(depth):
