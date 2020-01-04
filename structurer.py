@@ -1,14 +1,14 @@
 from copy import deepcopy
 
 from aggregator import Aggregator
-from expressions import JumpExpression, StopExpression, JumpIExpression
+from expressions import JumpExpression
 from solidity.splitter import split_bytecode
 from structures import *
 
 import sys
 
 
-class LoopS(object):
+class PreLoop(object):
     def __init__(self, header, graph):
         self.graph = deepcopy(graph)
 
@@ -48,10 +48,6 @@ class Structurer(Aggregator):
         if self.__has_indirect_jumps(graph):
             return
 
-        #sorted_ids = graph.depth_first_search(func.entry_id)
-        #if sorted_ids:
-        #    self.__successor_refinement(sorted_ids[0], graph)
-
         sorted_ids = graph.depth_first_search(func.entry_id)
         func_entry = func.entry_id
         for block_id in sorted_ids:
@@ -68,6 +64,7 @@ class Structurer(Aggregator):
         for l in loops:
             loop_exits.extend(l.exits)
 
+        # currently not in use, only for continue statements needed
         loop_tails = []
         for l in loops:
             loop_tails.extend(l.tails)
@@ -78,7 +75,7 @@ class Structurer(Aggregator):
 
         sorted_ids = graph.depth_first_search(func.entry_id)
         for block_id in sorted_ids:
-            self.__match_breaks(block_id, graph, loop_succs, loop_exits, loop_tails, loop_headers)
+            self.__match_breaks(block_id, graph, loop_succs, loop_exits, loop_headers)
 
         sorted_ids = graph.depth_first_search(func_entry)
         for block_id in sorted_ids:
@@ -96,19 +93,11 @@ class Structurer(Aggregator):
         loops = []
 
         for block in graph.depth_first_search(entry_id):
-            # if block == cfg.root:
-            #	continue
-
             for succ in graph.get_successor_ids(block):
                 # Every successor that dominates its predecessor must be the header of a loop.
                 # That is, block.succ is a back edge.
 
                 if graph.dominates_over(succ, block):
-                    # we assume that all loops with the same header are the same loops
-                    # this scenario is possible because continue statements
-                    # if succ in [l.header for l in loops]:
-                    #    self.natural_loop_for_edge(graph, succ, block, [l for l in loops if l.header is succ][0])
-                    # else:
                     loops.append(self.natural_loop_for_edge(graph, succ, block))
 
         # logic for determining exit nodes
@@ -128,30 +117,13 @@ class Structurer(Aggregator):
                         succ_list.append(s for s in graph.get_successor_ids(succ) if
                                          s not in loop.bbs and graph.dominates_over(loop.header, s))
 
-                # todo loop.succ = loop.succ union succ_list
-                # for s in succ_list:
-                #    loop.succ.append(s)
-
-        # max_succ = None
-        # for loop in loops:
-        # for block in loop.bbs:
-        # if block.ins[-1].instruction in [JUMPI, JUMP]:
-        # for succ in block.succ:
-        #		if succ not in loop.bbs and succ.ins[0].instruction is not INVALID:
-        # loop.exits.append(block)
-        #			if not max_succ or max_succ.start < succ.start:
-        #				max_succ = succ
-        # loop.succ = max_succ
-        # max_succ.is_loop_succ = True
-        # max_succ.ingoing = loop.exits.__len__()
-
-        #print([str(l) for l in loops])
+        # print([str(l) for l in loops])
         return loops
 
     def natural_loop_for_edge(self, graph, header, tail, loop=None):
         worklist = []
         if not loop:
-            loop = LoopS(header, graph)
+            loop = PreLoop(header, graph)
             loop.bbs.append(header)
 
         loop.tails.append(tail)
@@ -169,20 +141,6 @@ class Structurer(Aggregator):
                     worklist.append(pred)
 
         return loop
-
-    def __successor_refinement(self, block_id, graph):
-        if not graph.has_block(block_id):
-            return
-        block = graph.get_block(block_id)
-        if not isinstance(block.get_items()[0], StopExpression):
-            return
-
-        while graph.get_single_predecessor(block.get_id()):
-            block = graph.get_block(graph.get_single_predecessor(block.get_id()))
-            if not isinstance(block.get_items()[0], JumpExpression):
-                return
-
-        block_list = [block]
 
     def __has_indirect_jumps(self, graph):
         indirect_jumps = set()
@@ -207,13 +165,13 @@ class Structurer(Aggregator):
 
         return new_func_entry
 
-    def __match_breaks(self, block_id, graph, loop_succs, loop_exits, loop_tails, loop_headers):
+    def __match_breaks(self, block_id, graph, loop_succs, loop_exits, loop_headers):
         if not graph.has_block(block_id):
             return
         original_id, cur_id = block_id, -1
         while cur_id != block_id:
             cur_id = block_id
-            block_id = self.__match_break(block_id, graph, loop_succs, loop_exits, loop_tails, loop_headers)
+            block_id = self.__match_break(block_id, graph, loop_succs, loop_exits, loop_headers)
 
     def __match_structures(self, block_id, graph):
         original_id, cur_id = block_id, -1
@@ -260,13 +218,8 @@ class Structurer(Aggregator):
                 break
             if graph.get_single_predecessor(cur_id) != prev_id:
                 break
-            # if graph.has_edge(cur_id, prev_id):
-            #	break
-            # if isinstance(graph.get_block(cur_id), IfCombined) or isinstance(graph.get_block(cur_id), IfThen):
-            #	break
             sequence.append(cur_id)
             prev_id = cur_id
-        # print(sequence)
         if len(sequence) == 1:
             return a0
         an = sequence[-1]
@@ -305,7 +258,7 @@ class Structurer(Aggregator):
         graph.remove_blocks({a0, a1, a2})
         return new_id
 
-    def __match_break(self, a0, graph, loop_succs, loop_exits, loop_tails, loop_headers):
+    def __match_break(self, a0, graph, loop_succs, loop_exits, loop_headers):
         suc = None
         for s in graph.get_successor_ids(a0):
             if s in loop_succs:
@@ -319,12 +272,12 @@ class Structurer(Aggregator):
 
         if a0 in loop_exits or a0 in loop_headers:
             new_id = graph.allocate_id()
-            block = ExpressionBlock(new_id, -1)  # todo address
+            block = ExpressionBlock(new_id, -1)  # dummy address #1
             block.add_break()
             graph.add_block(block)
 
             tail_id = graph.allocate_id()
-            tail = ExpressionBlock(tail_id, -2)  # todo address
+            tail = ExpressionBlock(tail_id, -2)  # dummy address #2
             graph.add_block(tail)
 
             graph.transfer_successors(a0, tail_id)

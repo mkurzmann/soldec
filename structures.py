@@ -171,7 +171,7 @@ class ExternalFunction(object):
         if sig == str(hex(FALLBACK_SIGNATURE)):
             sig = "function()"
         elif sig == str(hex(CONSTRUCTOR_SIGNATURE)):
-            sig = "constructor()"  # todo args?
+            sig = "constructor()"  # todo args
         else:
             sig = "function " + sig
 
@@ -274,10 +274,10 @@ class Seq(Structure):
             results.append(block.dot_format_block(depth))
         return "".join(results)
 
-    def dot_format_while_header(self, depth, invert=False):
+    def dot_format_while_header(self, depth):
         results = []
         for block in self.blocks:
-            results.append(block.dot_format_while_header(depth, invert))
+            results.append(block.dot_format_while_header(depth))
         return "".join(results)
 
     def dot_format_do_while(self, depth):
@@ -285,7 +285,7 @@ class Seq(Structure):
         further_seq = isinstance(self.blocks[-1], Seq)
 
         if not further_seq:
-            results.append(self.blocks[0].dot_format_while_header(depth, True))
+            results.append(self.blocks[0].dot_format_while_header(depth))
         else:
             for block in self.blocks:
                 if block == self.blocks[-1] and isinstance(block, Seq):
@@ -326,39 +326,8 @@ class IfCombined(Structure):
                    self.blocks[2].dot_format_block(depth)]
         return "".join(results)
 
-    # todo cleanup this code after finalization
-    def dot_format_while_header(self, depth, invert=False):
-        prefix = get_prefix(depth)
-        results = []
-        read = self.blocks[2].get_items()[0].reads[1]
-        first = ""
-        second = ""
-        var = ""
-
-        for expression in self.blocks[0].get_items():
-            if isinstance(expression, JumpIExpression) and expression.get_dependency(1):
-                first = str(expression.get_dependency_or_read(1)).split(" = ")[1]
-            elif isinstance(expression, JumpIExpression) and expression.get_dependency_or_read(1):
-                first = expression.get_dependency_or_read(1)
-            if str(expression).__contains__(read + " = "):
-                var = str(expression).split(" = ")[1]
-            elif not isinstance(expression, JumpIExpression):
-                results.append(prefix + str(expression))
-        for expression in self.blocks[1].get_items():
-            if str(expression).__contains__(read + " = "):
-                second = str(expression).split(" = ")[1]
-
-        if first == var or first == read:
-            operator = " || "
-        else:
-            operator = " && "
-        b = self.blocks[2]
-        while isinstance(b, IfCombined):
-            cond_block = b.get_nth_block(1)
-            for expression in cond_block.get_items():
-                if str(expression).__contains__(read + " = "):
-                    second += operator + str(expression).split(" = ")[1]
-            b = b.get_nth_block(2)
+    def dot_format_while_header(self, depth):
+        prefix, results, read, first, second, var = self.find_conditions(depth)
 
         if first == var or first == read:
             results.append(prefix + "if (!(" + var.replace(";", "") + " || " + second.replace(";", "") + ")) {")
@@ -368,6 +337,16 @@ class IfCombined(Structure):
         return "\l".join(results) + "\l"
 
     def dot_format_if_header(self, depth):
+        prefix, results, read, first, second, var = self.find_conditions(depth)
+
+        if first == var or first == read:
+            results.append(prefix + "if (" + var.replace(";", "") + " || " + second.replace(";", "") + ") {")
+        else:
+            results.append(prefix + "if (" + var.replace(";", "") + " && " + second.replace(";", "") + ") {")
+
+        return "\l".join(results) + "\l"
+
+    def find_conditions(self, depth):
         prefix = get_prefix(depth)
         results = []
         read = self.blocks[2].get_items()[0].reads[1]
@@ -400,19 +379,12 @@ class IfCombined(Structure):
                     second += operator + str(expression).split(" = ")[1]
             b = b.get_nth_block(2)
 
-        if first == var or first == read:
-            results.append(prefix + "if (" + var.replace(";", "") + " || " + second.replace(";", "") + ") {")
-        else:
-            results.append(prefix + "if (" + var.replace(";", "") + " && " + second.replace(";", "") + ") {")
-
-        return "\l".join(results) + "\l"
+        return prefix, results, read, first, second, var
 
     def is_first_block_jumpi(self):
         first = self.get_nth_block(0)
         if isinstance(first, ExpressionBlock) and isinstance(first.get_items()[0], JumpIExpression):
             return True
-        # if isinstance(first, IfCombined) and first.get_nth_block(0).get_items()[0]: # todo nested structres
-        #    return True
 
     def get_items(self):
         return self.blocks[2].get_items()
@@ -424,7 +396,7 @@ class IfCombined(Structure):
 class IfThen(Structure):
     def __init__(self, block_id, suc_address, a0, a1):
         Structure.__init__(self, block_id, suc_address, [a0, a1])
-        if isinstance(a1, ExpressionBlock) or isinstance(a1, Seq):  # todo if-then-else in if-then testen
+        if isinstance(a1, ExpressionBlock) or isinstance(a1, Seq):
             a1.remove_end_jump()
 
     def debug_block(self, depth):
@@ -443,10 +415,10 @@ class IfThen(Structure):
             prefix + "}\l"]
         return "".join(results)
 
-    def dot_format_while_header(self, depth, invert=False):
+    def dot_format_while_header(self, depth):
         prefix = get_prefix(depth)
         results = [
-            self.blocks[0].dot_format_while_header(depth, invert),
+            self.blocks[0].dot_format_while_header(depth),
             self.blocks[1].dot_format_block(depth + 1),
             prefix + "}\l"]
         return "".join(results)
@@ -456,7 +428,7 @@ class IfThenElse(Structure):
     def __init__(self, block_id, suc_address, a0, a1, a2):
         Structure.__init__(self, block_id, suc_address, [a0, a1, a2])
         if isinstance(a1, ExpressionBlock) or isinstance(a1, Seq):
-            # todo if-then-else in if-then-else testen -> falls nicht - leeres remove_end_jump oder vor dem verwenden instanceof
+            # todo if-then-else in if-then-else? if-then-else in if-then? -> lösung leeres remove_end_jump oder vor dem Verwenden instanceof?
             a1.remove_end_jump()
         if isinstance(a2, ExpressionBlock):  # or isinstance(a2, Seq):
             a2.remove_end_jump()
@@ -480,12 +452,6 @@ class IfThenElse(Structure):
             self.blocks[2].dot_format_block(depth + 1),
             prefix + "}\l"]
         return "".join(results)
-
-    # def dot_format_while_header(self, depth):
-    #    results = []
-    #    for block in self.blocks:
-    #        results.append(block.dot_format_while_header(depth))
-    #    return "".join(results)
 
 
 class Loop(Structure):
@@ -512,20 +478,6 @@ class Loop(Structure):
             prefix + "}\l",
         ]
         return "".join(results)
-
-    # def dot_format_while_header(self, depth):
-    #    prefix = get_prefix(depth)
-    #    results = [
-    #        prefix + "while (true) {\l",
-    #        self.blocks[0].dot_format_while_header(depth + 1),
-
-
-#
-#        #self.blocks[0].dot_format_block(depth + 1),
-#        self.blocks[1].dot_format_block(depth + 1),
-#        prefix + "}\l",
-#    ]
-#    return "".join(results)
 
 
 class DoWhileLoop(Structure):
