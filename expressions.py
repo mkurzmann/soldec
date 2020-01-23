@@ -305,8 +305,12 @@ class MloadExpression(Expression):
 
 class CallLoadExpression(Expression):
     def format_dependencies(self, suppress):
-        arg_count = (self.reads[0] - 4) // 32 + 1
-        return "_args" + str(arg_count)
+        try:
+            arg_count = (self.reads[0] - 4) // 32 + 1
+            return "_args" + str(arg_count)
+        except TypeError:
+            return "_args" + str(self.reads[0])
+
 
 
 class StopExpression(Expression):

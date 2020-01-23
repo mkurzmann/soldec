@@ -50,11 +50,12 @@ def split_bytecode(bytecode):
             if operation.push_bytes > 0:
                 bytes_count = operation.push_bytes
                 instructions.append(Instruction(counter, operation, int.from_bytes(bytecode[:bytes_count], ENDIANNESS)))
+                print("{:03d}".format(counter) + " " + operation.name + " " + bytecode[:bytes_count].hex())
                 bytecode = bytecode[bytes_count:]
                 counter += bytes_count
             else:
                 instructions.append(Instruction(counter, operation))
-
+                print("{:03d}".format(counter) + " " + operation.name)
         # split bytecode in separate contract parts
         counter += 1
         if operation.is_program_splitting() and not BYTECODES.get(
@@ -74,7 +75,7 @@ def split_bytecode(bytecode):
                 sig = program.instructions[result[0]].arg
                 jump_addr = program.instructions[result[1] - 1].arg
                 jumpi_pcs.append(program.instructions[result[1]].addr)
-                functions.append(Function(sig, get_function_signature(hex(sig)), jump_addr))
+                #functions.append(Function(sig, get_function_signature(hex(sig)), jump_addr))
 
         # extract fallback function
         if jumpi_pcs:
@@ -86,3 +87,5 @@ def split_bytecode(bytecode):
             program.is_construct = True
 
     return programs
+
+#split_bytecode(input())

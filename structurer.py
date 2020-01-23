@@ -235,21 +235,32 @@ class Structurer(Aggregator):
         return new_id
 
     def __match_combined_if(self, a0, graph):
+        # block a0 has exactly two successors
         suc_ids = graph.get_dual_successors(a0)
         if suc_ids is None:
             return a0
+
+        # the successor a2 of block a0 must be also the successor of block a1 and a2 must have exactly 2 successors
         a1 = graph.get_natural_successor(a0)
         a2 = graph.get_single_successor(a1)
         if a2 not in suc_ids or not graph.get_dual_successors(a2):
             return a0
+
+        # the block a2 must have a JUMPI expression
         block = graph.get_block(a2)
         if isinstance(block, ExpressionBlock) and not (
                 block.get_items() and isinstance(block.get_items()[0], JumpIExpression)):
             return a0
-        if block.get_exit_address() > block.get_entry_address() + 6:  # heuristische approximation
+
+        # the block a2 must have at most 6 bytes
+        if block.get_exit_address() > block.get_entry_address() + 6:  # heuristic approximation
             return a0
+
+        # the block a2
         if isinstance(block, IfCombined) and not block.is_first_block_jumpi():
             return a0
+
+        # the IfCombined structure is created from the 3 blocks and the preds und succs are adapted
         new_id = graph.allocate_id()
         block = IfCombined(new_id, -1, graph[a0], graph[a1], graph[a2])
         graph.add_block(block)
