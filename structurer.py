@@ -48,11 +48,13 @@ class Structurer(Aggregator):
         if self.__has_indirect_jumps(graph):
             return
 
+        # first, structure unstructured (combined) ifs
         sorted_ids = graph.depth_first_search(func.entry_id)
         func_entry = func.entry_id
         for block_id in sorted_ids:
             func_entry = self.__match_unstructured_conditions(block_id, graph, func.entry_id)
 
+        # second, determine loop information via domination, back edge and loop successor refinement
         graph.create_dominance_relation(func_entry)
         loops = self.compute_natural_loops(graph, func_entry)
 
@@ -73,10 +75,12 @@ class Structurer(Aggregator):
         for l in loops:
             loop_headers.append(l.header)
 
+        # match abnormal loop exits (breaks)
         sorted_ids = graph.depth_first_search(func.entry_id)
         for block_id in sorted_ids:
             self.__match_breaks(block_id, graph, loop_succs, loop_exits, loop_headers)
 
+        # match other structures (sequences, while, do-while, if-then, if-then-else)
         sorted_ids = graph.depth_first_search(func_entry)
         for block_id in sorted_ids:
             self.__match_structures(block_id, graph)
@@ -107,6 +111,7 @@ class Structurer(Aggregator):
                     if succ not in loop.bbs:
                         loop.exits.append(bb)
                         loop.succ.append(succ)
+            # loop successor refinement algorithm (adapted from dream)
             succ_list = loop.succ
             while len(loop.succ) > 1 and succ_list:
                 succ_list = []
@@ -121,6 +126,8 @@ class Structurer(Aggregator):
         return loops
 
     def natural_loop_for_edge(self, graph, header, tail, loop=None):
+        # natural loop algorithm, adapted from
+        # http://www.backerstreet.com/decompiler/loop_analysis.php
         worklist = []
         if not loop:
             loop = PreLoop(header, graph)
@@ -281,6 +288,7 @@ class Structurer(Aggregator):
 
         graph[a0].remove_end_jump()
 
+        # add break for the "real" successor of the loop - this is the loop condition check
         if a0 in loop_exits or a0 in loop_headers:
             new_id = graph.allocate_id()
             block = ExpressionBlock(new_id, -1)  # dummy address #1
@@ -297,6 +305,7 @@ class Structurer(Aggregator):
             graph.add_edge(new_id, tail_id)
             return a0
 
+        # change the link of break block to "real" loop successor block and add break statement
         preds = []
         nodes = [a0]
         while nodes:

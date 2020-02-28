@@ -118,8 +118,8 @@ class Expression(object):
         for index in range(len(self.reads)):
             dependencies.append(self.format_dependency(index, suppress))
         if not dependencies:
-            return "%s" % (self.opcode)
-        return "%s(%s);" % (self.opcode, ", ".join(dependencies))
+            return "%s" % (self.opcode.lower())
+        return "%s(%s);" % (self.opcode.lower(), ", ".join(dependencies))
 
     # format dependency at index into a string
     def format_dependency(self, index, suppress=True):
@@ -244,7 +244,7 @@ class JumpIExpression(Expression):
 
 class MstoreExpression(Expression):
     def __str__(self):
-        return "M[%s] = %s" % (self.format_dependency(0), self.format_dependency(1))
+        return "m[%s] = %s" % (self.format_dependency(0), self.format_dependency(1))
 
 
 class AbstractStoreExpression(Expression):
@@ -285,7 +285,7 @@ class AbstractStoreExpression(Expression):
                 return "_storage" + first.format_dependency(0).replace("0x", "") + "[" + dep.format_dependency(1) + "]"
 
         # fallback, if no argument was found
-        return "S[%s]" % self.format_dependency(index)
+        return "s[%s]" % self.format_dependency(index)
 
 
 class SstoreExpression(AbstractStoreExpression):
@@ -300,7 +300,7 @@ class SloadExpression(AbstractStoreExpression):
 
 class MloadExpression(Expression):
     def format_dependencies(self, suppress):
-        return "M[%s]" % self.format_dependency(0)
+        return "m[%s]" % self.format_dependency(0)
 
 
 class CallLoadExpression(Expression):
@@ -331,8 +331,8 @@ class SHA3Expression(Expression):
         for index in range(len(self.reads)):
             dependencies.append(self.format_dependency(index, suppress))
         if not dependencies:
-            return "%s" % (self.opcode)
-        return "%s(%s)" % (self.opcode, ", ".join(dependencies))
+            return "%s" % (self.opcode.lower())
+        return "%s(%s)" % (self.opcode.lower(), ", ".join(dependencies))
 
 
 class LogExpression(Expression):

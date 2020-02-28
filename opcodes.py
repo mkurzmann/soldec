@@ -429,7 +429,7 @@ special_ops = {
 	"CALLER": "msg.sender",
 	"TIMESTAMP": "block.timestamp",
 	"CALLVALUE": "msg.value",
-	"ADDRESS": "self",
+	"ADDRESS": "address(this)",
 	"ORIGIN": "tx.origin",
 	"GAS": "msg.gas",
 	"NUMBER": "block.number",

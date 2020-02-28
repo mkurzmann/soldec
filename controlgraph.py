@@ -495,7 +495,7 @@ class ControlGraph(object):
 
     def print(self):
         for block in sorted(self.basic_blocks.values(), key=lambda block: block.get_entry_address()):
-            label = block.dot_format_block(1).lower()
+            label = block.dot_format_block(1)#.lower()
             label = "// block " + hex(block.get_entry_address()) + "\l" + label
             print(label.replace("\l", "\n"))
 
