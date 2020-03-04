@@ -33,8 +33,8 @@ class Lifter(GraphBuilder):
         # TODO: extend to include undetected callers ?
         # maps callee_pair (callee_entry, callee_exit) to caller_pairs
         self.__callee_pairs = dict()
-        for callee_exit, caller_begins in self.indirect_jumps.items():
-            for caller_begin, caller_end in caller_begins.items():
+        for callee_exit, caller_begins in list(self.indirect_jumps.items()):
+            for caller_begin, caller_end in list(caller_begins.items()):
                 # caller_begin should not be jumpi
                 if self.graph[caller_begin].is_jumpi_block():
                     # print(caller_begin)
@@ -118,7 +118,7 @@ class Lifter(GraphBuilder):
     def __extract_internal_calls(self, func):
         callee_pairs = self.__get_present_pairs(func)
         # print(callee_pairs)
-        for callee_pair, caller_pairs in callee_pairs.items():
+        for callee_pair, caller_pairs in list(callee_pairs.items()):
             in_func = self.internal_functions[callee_pair]
             opcode = in_func.get_intcall_opcode()
             for caller_pair in caller_pairs:
@@ -127,7 +127,7 @@ class Lifter(GraphBuilder):
     def __get_present_pairs(self, func):
         graph = func.graph
         callee_pairs = dict()
-        for callee_pair, caller_pairs in self.__callee_pairs.items():
+        for callee_pair, caller_pairs in list(self.__callee_pairs.items()):
             if not graph.has_blocks(callee_pair):
                 continue
             present_caller_pairs = set()
@@ -142,7 +142,7 @@ class Lifter(GraphBuilder):
         caller_begins = defaultdict(int)
 
         # remove the case in which one caller has multiple callees
-        for callee_pair, caller_pairs in callee_pairs.items():
+        for callee_pair, caller_pairs in list(callee_pairs.items()):
             for caller_pair in caller_pairs:
                 caller_begin, _ = caller_pair
                 caller_begins[caller_begin] += 1
@@ -227,7 +227,7 @@ class Lifter(GraphBuilder):
                list(self.internal_functions.values())
 
     def debug_callee_pairs(self):
-        for callee_pair, caller_pairs in self.__callee_pairs.items():
+        for callee_pair, caller_pairs in list(self.__callee_pairs.items()):
             print(callee_pair)
             print(list(caller_pairs))
             print("")
@@ -253,7 +253,7 @@ class Lifter(GraphBuilder):
             if block_id not in func.ins_outs:
                 continue
 
-            for pre_id, suc_id in func.ins_outs[block_id].items():
+            for pre_id, suc_id in list(func.ins_outs[block_id].items()):
                 if len(suc_id) == 1:
                     suc_id = suc_id.pop()
                     new_id = resolver.allocate_id()
