@@ -1,4 +1,0 @@
-digraph {
-node [shape=rect,fontname="Courier"];
-4[label="0x56\l--------\lrevert(0x0, 0x0);\l"];
-}
