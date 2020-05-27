@@ -433,7 +433,10 @@ if __name__ == "__main__":
         line = line.split(" ")[1]
     input_file.close()
 
-    programs = split_bytecode(line)
+    debug = False
+    if "-d" in sys.argv:
+        debug = True
+    programs = split_bytecode(line, debug)
 
     for p in programs:
         a = Structurer(p.bytecode.hex(), p.is_construct)

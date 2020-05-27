@@ -169,7 +169,7 @@ class BaseExecutor:
 		# 	print(output)
 		self.store_output(item, output)
 
-		if "INTCALL" in opcode:
+		if "FUNC" in opcode:
 			self.issue_intcall(item, inputs)
 		elif opcode == "INTRET":
 			return INTRETURN_ADDRESS   # recursive call returns

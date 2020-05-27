@@ -6,7 +6,7 @@ from solidity.signatures import get_function_signature
 from solidity.structures import *
 
 
-def split_bytecode(bytecode):
+def split_bytecode(bytecode, debug=False):
     counter = 0
 
     if type(bytecode) is str:
@@ -50,16 +50,18 @@ def split_bytecode(bytecode):
             if operation.push_bytes > 0:
                 bytes_count = operation.push_bytes
                 instructions.append(Instruction(counter, operation, int.from_bytes(bytecode[:bytes_count], ENDIANNESS)))
-                print("{:03d}".format(counter) + " " + operation.name + " " + bytecode[:bytes_count].hex())
+                if debug:
+                    print("{:03d}".format(counter) + " " + operation.name + " " + bytecode[:bytes_count].hex())
                 bytecode = bytecode[bytes_count:]
                 counter += bytes_count
             else:
                 instructions.append(Instruction(counter, operation))
-                print("{:03d}".format(counter) + " " + operation.name)
+                if debug:
+                    print("{:03d}".format(counter) + " " + operation.name)
         # split bytecode in separate contract parts
         counter += 1
-        if operation.is_program_splitting() and not BYTECODES.get(
-                int.from_bytes(bytecode[:1], ENDIANNESS)).is_jumpdest():
+        if (operation.is_program_splitting() and not BYTECODES.get(
+                int.from_bytes(bytecode[:1], ENDIANNESS)).is_jumpdest()) or len(bytecode) == 0:
             programs.append(Program(bytecode_copy[:counter], instructions))
             instructions = []
             bytecode_copy = bytecode_copy[counter:]

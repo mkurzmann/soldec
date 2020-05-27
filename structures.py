@@ -223,6 +223,12 @@ class InternalFunction(ExternalFunction):
         self.graph.visualize("temp/temp.dot", (self.reads, self.writes))
         os.system("dot -Tpdf temp/temp.dot -o temp/0x%x.pdf" % self.signature)
 
+        sig = "function func" + hex(self.signature)[2:] # todo args?
+
+        print("\n" + sig + " private {")
+        self.graph.print()
+        print("}")
+
 
 class Structure:
     def __init__(self, block_id, suc_address, blocks):
@@ -252,6 +258,9 @@ class Structure:
 
     def get_nth_block(self, index):
         return self.blocks[index]
+
+    def remove_end_jump(self):
+        pass
 
 
 class Seq(Structure):
@@ -327,19 +336,22 @@ class IfCombined(Structure):
         return "".join(results)
 
     def dot_format_while_header(self, depth):
-        prefix, results, read, first, second, var = self.find_conditions(depth)
+        prefix, results, read, tmp, second, first = self.find_conditions(depth)
 
-        if first == var or first == read:
-            results.append(prefix + "if (!(" + var.replace(";", "") + " || " + second.replace(";", "") + ")) {")
+        # check if operator is OR or AND, depending on the position of the condition in the bytecode
+        # for while headers, negate the condition
+        if tmp == first or tmp == read:
+            results.append(prefix + "if (!(" + first.replace(";", "") + " || " + second.replace(";", "") + ")) {")
         else:
-            results.append(prefix + "if (!(" + var.replace(";", "") + " && " + second.replace(";", "") + ")) {")
+            results.append(prefix + "if (!(" + first.replace(";", "") + " && " + second.replace(";", "") + ")) {")
 
         return "\l".join(results) + "\l"
 
     def dot_format_if_header(self, depth):
-        prefix, results, read, first, second, var = self.find_conditions(depth)
+        prefix, results, read, tmp, second, var = self.find_conditions(depth)
 
-        if first == var or first == read:
+        # check if operator is OR or AND, depending on the position of the condition in the bytecode
+        if tmp == var or tmp == read:
             results.append(prefix + "if (" + var.replace(";", "") + " || " + second.replace(";", "") + ") {")
         else:
             results.append(prefix + "if (" + var.replace(";", "") + " && " + second.replace(";", "") + ") {")
@@ -350,27 +362,32 @@ class IfCombined(Structure):
         prefix = get_prefix(depth)
         results = []
         read = self.blocks[2].get_items()[0].reads[1]
-        first = ""
-        second = ""
-        var = ""
+        tmp = ""    # for determining the operator
+        second = "" # second condition
+        first = ""  # first condition
 
+        # search for the first condition in the current block (block 0)
         for expression in self.blocks[0].get_items():
             if isinstance(expression, JumpIExpression) and expression.get_dependency(1):
-                first = str(expression.get_dependency_or_read(1)).split(" = ")[1]
+                tmp = str(expression.get_dependency_or_read(1)).split(" = ")[1]
             elif isinstance(expression, JumpIExpression) and expression.get_dependency_or_read(1):
-                first = expression.get_dependency_or_read(1)
+                tmp = expression.get_dependency_or_read(1)
             if str(expression).__contains__(read + " = "):
-                var = str(expression).split(" = ")[1]
+                first = str(expression).split(" = ")[1]
             elif not isinstance(expression, JumpIExpression):
                 results.append(prefix + str(expression))
+        # search for second condition in the successor block (block 1)
         for expression in self.blocks[1].get_items():
             if str(expression).__contains__(read + " = "):
                 second = str(expression).split(" = ")[1]
 
-        if first == var or first == read:
+        # check if operator is OR or AND, depending on the position of the condition in the bytecode
+        if tmp == first or tmp == read:
             operator = " || "
         else:
             operator = " && "
+
+        # maybe add more conditions to the second, if there are nested unstructured conditions
         b = self.blocks[2]
         while isinstance(b, IfCombined):
             cond_block = b.get_nth_block(1)
@@ -379,7 +396,7 @@ class IfCombined(Structure):
                     second += operator + str(expression).split(" = ")[1]
             b = b.get_nth_block(2)
 
-        return prefix, results, read, first, second, var
+        return prefix, results, read, tmp, second, first
 
     def is_first_block_jumpi(self):
         first = self.get_nth_block(0)
@@ -428,7 +445,6 @@ class IfThenElse(Structure):
     def __init__(self, block_id, suc_address, a0, a1, a2):
         Structure.__init__(self, block_id, suc_address, [a0, a1, a2])
         if isinstance(a1, ExpressionBlock) or isinstance(a1, Seq):
-            # todo if-then-else in if-then-else? if-then-else in if-then? -> lösung leeres remove_end_jump oder vor dem Verwenden instanceof?
             a1.remove_end_jump()
         if isinstance(a2, ExpressionBlock):  # or isinstance(a2, Seq):
             a2.remove_end_jump()

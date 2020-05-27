@@ -211,7 +211,7 @@ class Lifter(GraphBuilder):
             instructions = [MloadInstruction(opcode, reads, writes, address)]
         elif opcode == "CALLDATALOAD":
             instructions = [CallLoadInstruction(opcode, reads, writes, address)]
-        elif opcode.startswith("INTCALL"):
+        elif opcode.startswith("FUNC"):
             instructions = [IntCallInstruction(opcode, reads, writes, address)]
         elif opcode == "SSTORE":
             instructions = [SstoreInstruction(opcode, reads, writes, address)]

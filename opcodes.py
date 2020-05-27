@@ -153,7 +153,7 @@ actions = {
 	"INTRET": (0, 0),  # this is fake
 	"ASSERT": (1, 0),  # this is fake
 	"REQUIRE": (1, 0),  # this is fake
-	# multiple INTCALL will be added, all fake
+	# multiple FUNC will be added, all fake
 
 	"STOP": (0, 0),
 	"ADD": (2, 1),
@@ -526,7 +526,7 @@ throw_away_ops = set(list(bin_ops.keys())
 
 INTERNAL_RETURN_OPCODE = "INTRET"
 
-INTERNAL_CALL_OPCODE = "INTCALL"
+INTERNAL_CALL_OPCODE = "FUNC"
 
 ADDRESS_MASK = 0xffffffffffffffffffffffffffffffffffffffff
 WORD_MASK = 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff

@@ -164,7 +164,7 @@ class Aggregator(Optimizer):
         for i, expression in enumerate(expressions):
             writes = expression.get_write_registers()
             opcode = expression.opcode
-            if "INTCALL" in opcode or \
+            if "FUNC" in opcode or \
                     len(writes) != 1:
                 continue
 
@@ -177,7 +177,7 @@ class Aggregator(Optimizer):
         for i, expression in enumerate(expressions):
             writes = expression.get_write_registers()
             opcode = expression.opcode
-            if "INTCALL" in opcode or \
+            if "FUNC" in opcode or \
                     len(writes) != 1:
                 continue
 
