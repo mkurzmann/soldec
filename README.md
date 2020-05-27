@@ -11,16 +11,16 @@ Moreover, we explore the structure of EVM bytecode. Based on these results we de
 and improves on the open-source decompiler Erays. Finally, we evaluate the prototype regarding its ability to reconstruct 
 Solidity-like code.
 
-Soldec (short for Solidity Decompiler) is an Ethereum smart contract reverse engineering tool which is is written in 
-Python 3. As already mentioned it is based on Erays (https://github.com/teamnsrg/erays) and it was developed further 
+Soldec (short for Solidity Decompiler) is an Ethereum smart contract reverse engineering tool which is written in 
+Python 3. As already mentioned it is based on Erays (https://github.com/teamnsrg/erays) which was developed further 
 with the goal to make the output more Solidity-like. This was part of the master thesis
-_Decompilation of EVM Bytecode_ which is located in https://github.com/mkurzmann/soldec/thesis.
+_Decompilation of EVM Bytecode_ which is located in the folder ```thesis```.
 
-### Improvements
-The improvements that were made on Erays are listed bellow:
-- numerous improvements of the readability of the decompiled code such as CLI output and contract structure
-- splitting of the deployment bytecode in creation (constructor detection) and runtime code (function detection)
-- splitting of bytecodes containing more than one contracts
+### Improvements and Extensions
+The improvements and extensions made on Erays are listed bellow:
+- numerous improvements on the readability of the decompiled code such as CLI output and contract structure
+- splitting the deployment bytecode in creation (for constructor decompilation) and runtime code (for function decompilation)
+- splitting of bytecodes containing more than one contracts and decompiling each of them
 - metadata hash detection and removal
 - function signature detection as far as possible
 - event signature detection as far as possible
@@ -33,7 +33,7 @@ The improvements that were made on Erays are listed bellow:
 - little detection of some typ information
 
 ### User Guide
-First you need install graphviz, since Erays uses PDF outputs which are not removed in Soldec.
+First you need install graphviz, since Erays outputs PDFs which are not removed in Soldec.
 ```sh
 $ sudo apt install graphviz
 ```
@@ -41,7 +41,7 @@ To run Soldec, use the structurer on a file that contains contract hex string, f
 ```sh
 $ python structurer.py temp/basictoken.hex
 ```
-Now a decompiled version of the Solidity-Contract located in ```temp/basictoken.sol`` should appear on the CLI.
+Now a decompiled version of the Solidity-Contract located in ```temp/basictoken.sol``` should appear on the CLI.
 
 If the complain was:
 ```sh
